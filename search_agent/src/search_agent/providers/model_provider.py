@@ -40,8 +40,9 @@ class ModelProvider:
 
         # Set up model API by initializing the AsyncOpenAI client with the base URL and API key
         self.client = AsyncOpenAI(
-            base_url=self.base_url,
             api_key=self.api_key,
+            base_url=self.base_url,
+            http_client=None  # Let the client create its own HTTP client
         )
 
         # ---
@@ -78,12 +79,12 @@ When responding to a fact-checking request:
     - Naturally and conversationally ease the user into the correction.
     - Example varied tones:
       - "That's a common belief, but here's what the evidence shows..."
-      - "While it’s easy to see why this idea exists, it doesn’t align with the facts."
-      - "This is a widespread misconception, and it’s understandable — but the reality is a bit different."
+      - "While it's easy to see why this idea exists, it doesn't align with the facts."
+      - "This is a widespread misconception, and it's understandable — but the reality is a bit different."
       - "At first glance, it might seem true, but closer examination shows otherwise."
-      - "Many people have heard this before, but it doesn’t hold up to current understanding."
+      - "Many people have heard this before, but it doesn't hold up to current understanding."
     - Maintain a kind, respectful tone while being clear that the claim is incorrect.
-  - If the information is partially true, summarize the balance of truth and falsehood naturally (e.g., "This claim is partly correct but leaves out important details," or "There’s some truth here, but key parts are misleading.").
+  - If the information is partially true, summarize the balance of truth and falsehood naturally (e.g., "This claim is partly correct but leaves out important details," or "There's some truth here, but key parts are misleading.").
   - Tailor the tone based on the specific context and degree of truth or falsehood.
 
 - After the opening statement, provide a clear and concise **EXPLANATION** of how you reached your conclusion.
