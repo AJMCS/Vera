@@ -151,6 +151,8 @@ if __name__ == "__main__":
     agent = SearchAgent(name="Vera")
     # Create a server to handle requests to the agent
     server = DefaultServer(agent)
+    # Expose the FastAPI app instance
+    app = server.app
     # Run the server
     port = int(os.environ.get("PORT", 8080))
-    server.run(port = port)
+    server.run(port=port)
