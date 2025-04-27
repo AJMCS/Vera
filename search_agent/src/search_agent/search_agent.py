@@ -11,7 +11,6 @@ from sentient_agent_framework import (
     Query,
     ResponseHandler)
 from typing import AsyncIterator, List
-from fastapi import FastAPI
 
 
 load_dotenv()
@@ -153,14 +152,14 @@ class SearchAgent(AbstractAgent):
             yield chunk
 
 
-# Create FastAPI app
-app = FastAPI()
-
 # Create an instance of a SearchAgent
 agent = SearchAgent(name="Vera")
 
-# Initialize the server without initializing providers
-server = DefaultServer(agent, app=app)
+# Create a server to handle requests to the agent
+server = DefaultServer(agent)
+
+# Get the FastAPI app from the server
+app = server.app
 
 # Add startup event to initialize providers
 @app.on_event("startup")
