@@ -7,7 +7,7 @@ setup(
     package_dir={"": "src"},
     install_requires=[
         "fastapi>=0.115.12",
-        "uvicorn>=0.27.1",
+        "uvicorn>=0.34.0",
         "python-dotenv>=1.0.1",
         "sentient-agent-framework>=0.3.0",
     ],

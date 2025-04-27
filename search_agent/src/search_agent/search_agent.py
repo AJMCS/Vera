@@ -2,8 +2,8 @@ import logging
 import os
 import re
 from dotenv import load_dotenv
-from src.search_agent.providers.model_provider import ModelProvider
-from src.search_agent.providers.search_provider import SearchProvider
+from providers.model_provider import ModelProvider
+from providers.search_provider import SearchProvider
 from sentient_agent_framework import (
     AbstractAgent,
     DefaultServer,
@@ -59,7 +59,7 @@ class SearchAgent(AbstractAgent):
             scoring_prompt
         )
 
-        # 3. Parse the model’s output into (url, score) tuples
+        # 3. Parse the model's output into (url, score) tuples
         scored: List[tuple[str, float]] = []
         for line in response.splitlines():
             match = re.match(r"(\d+)\.\s*([0-1](?:\.\d+)?)\s*-\s*(.+)", line)
@@ -124,7 +124,7 @@ class SearchAgent(AbstractAgent):
 
 # Feed into the LLM for final answer generation
         synthesis_prompt = (
-            f"Using the following content excerpts, answer the user’s question:\n\n"
+            f"Using the following content excerpts, answer the user's question:\n\n"
             f"{search_results}\n\nQuestion: {query.prompt}"
         )
         async for chunk in self._model_provider.query_stream(synthesis_prompt):
