@@ -16,6 +16,7 @@ RUN mkdir -p search_agent/providers
 COPY search_agent/src/search_agent/search_agent.py search_agent/
 COPY search_agent/src/search_agent/providers/* search_agent/providers/
 COPY search_agent/src/search_agent/__init__.py search_agent/
+COPY search_agent/src/search_agent/providers/__init__.py search_agent/providers/
 
 # Set environment variables
 ENV PYTHONPATH=/app

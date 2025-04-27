@@ -2,8 +2,8 @@ import logging
 import os
 import re
 from dotenv import load_dotenv
-from providers.model_provider import ModelProvider
-from providers.search_provider import SearchProvider
+from search_agent.providers.model_provider import ModelProvider
+from search_agent.providers.search_provider import SearchProvider
 from sentient_agent_framework import (
     AbstractAgent,
     DefaultServer,
