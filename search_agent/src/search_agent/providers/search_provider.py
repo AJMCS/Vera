@@ -1,12 +1,12 @@
 from typing import List, Union
-from tavily import TavilyClient
+from tavily import AsyncTavilyClient
 
 class SearchProvider:
     def __init__(
             self,
             api_key: str
     ):
-        self.client = TavilyClient(api_key=api_key)
+        self.client = AsyncTavilyClient(api_key=api_key)
 
 
     async def search(
@@ -15,7 +15,6 @@ class SearchProvider:
     ) -> dict:
         results = await self.client.search(query)
         return results
-    
     
     async def extract(
             self,

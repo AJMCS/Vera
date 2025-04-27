@@ -24,22 +24,16 @@ class SearchAgent(AbstractAgent):
             name: str
     ):
         super().__init__(name)
-        self._model_provider = None
-        self._search_provider = None
 
-    def initialize_providers(self):
-        """Initialize providers with API keys."""
-        if self._model_provider is None:
-            model_api_key = os.getenv("MODEL_API_KEY")
-            if not model_api_key:
-                raise ValueError("MODEL_API_KEY is not set")
-            self._model_provider = ModelProvider(api_key=model_api_key)
+        model_api_key = os.getenv("MODEL_API_KEY")
+        if not model_api_key:
+            raise ValueError("MODEL_API_KEY is not set")
+        self._model_provider = ModelProvider(api_key=model_api_key)
 
-        if self._search_provider is None:
-            search_api_key = os.getenv("TAVILY_API_KEY")
-            if not search_api_key:
-                raise ValueError("TAVILY_API_KEY is not set")
-            self._search_provider = SearchProvider(api_key=search_api_key)
+        search_api_key = os.getenv("TAVILY_API_KEY")
+        if not search_api_key:
+            raise ValueError("TAVILY_API_KEY is not set") 
+        self._search_provider = SearchProvider(api_key=search_api_key)
 
     async def rank_urls(
     self,
@@ -65,7 +59,7 @@ class SearchAgent(AbstractAgent):
             scoring_prompt
         )
 
-        # 3. Parse the model's output into (url, score) tuples
+        # 3. Parse the model’s output into (url, score) tuples
         scored: List[tuple[str, float]] = []
         for line in response.splitlines():
             match = re.match(r"(\d+)\.\s*([0-1](?:\.\d+)?)\s*-\s*(.+)", line)
@@ -94,7 +88,7 @@ class SearchAgent(AbstractAgent):
         refinement_prompt = f"Create a concise web search query for: {query.prompt}, Check snopes if possible. Limit the prompt to 400 characters or less."
         refined_query = await self._model_provider.query(refinement_prompt)
         search_results = await self._search_provider.search(refined_query)
-        
+
         if len(search_results["results"]) > 0:
             # Use response handler to emit JSON to the client
             await response_handler.emit_json(
@@ -130,7 +124,7 @@ class SearchAgent(AbstractAgent):
 
 # Feed into the LLM for final answer generation
         synthesis_prompt = (
-            f"Using the following content excerpts, answer the user's question:\n\n"
+            f"Using the following content excerpts, answer the user’s question:\n\n"
             f"{search_results}\n\nQuestion: {query.prompt}"
         )
         async for chunk in self._model_provider.query_stream(synthesis_prompt):
@@ -152,16 +146,11 @@ class SearchAgent(AbstractAgent):
             yield chunk
 
 
-# Create an instance of a SearchAgent
-agent = SearchAgent(name="Vera")
-
-# Create a server to handle requests to the agent
-server = DefaultServer(agent)
-
-# Initialize providers before starting the server
-agent.initialize_providers()
-
 if __name__ == "__main__":
+    # Create an instance of a SearchAgent
+    agent = SearchAgent(name="Vera")
+    # Create a server to handle requests to the agent
+    server = DefaultServer(agent)
     # Run the server
     port = int(os.environ.get("PORT", 8080))
-    server.run(port=port)
+    server.run(port = port)
