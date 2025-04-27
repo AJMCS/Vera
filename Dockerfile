@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 python:3.11-slim
 
-WORKDIR /app
+#WORKDIR /app
 
 # Copy requirements and install dependencies
 COPY requirements.txt .
@@ -16,6 +16,6 @@ ENV PORT=8080
 # Expose the port the app runs on
 EXPOSE 8080
 
-WORKDIR /app/Vera
+#WORKDIR /app/Vera
 # Command to run the application
 CMD ["python", "-m", "src.search_agent.search_agent"]
