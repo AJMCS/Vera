@@ -25,16 +25,22 @@ class SearchAgent(AbstractAgent):
             name: str
     ):
         super().__init__(name)
+        self._model_provider = None
+        self._search_provider = None
 
-        model_api_key = os.getenv("MODEL_API_KEY")
-        if not model_api_key:
-            raise ValueError("MODEL_API_KEY is not set")
-        self._model_provider = ModelProvider(api_key=model_api_key)
+    def initialize_providers(self):
+        """Initialize providers with API keys."""
+        if self._model_provider is None:
+            model_api_key = os.getenv("MODEL_API_KEY")
+            if not model_api_key:
+                raise ValueError("MODEL_API_KEY is not set")
+            self._model_provider = ModelProvider(api_key=model_api_key)
 
-        search_api_key = os.getenv("TAVILY_API_KEY")
-        if not search_api_key:
-            raise ValueError("TAVILY_API_KEY is not set") 
-        self._search_provider = SearchProvider(api_key=search_api_key)
+        if self._search_provider is None:
+            search_api_key = os.getenv("TAVILY_API_KEY")
+            if not search_api_key:
+                raise ValueError("TAVILY_API_KEY is not set")
+            self._search_provider = SearchProvider(api_key=search_api_key)
 
     async def rank_urls(
     self,
@@ -152,8 +158,14 @@ app = FastAPI()
 
 # Create an instance of a SearchAgent
 agent = SearchAgent(name="Vera")
-# Create a server to handle requests to the agent
+
+# Initialize the server without initializing providers
 server = DefaultServer(agent, app=app)
+
+# Add startup event to initialize providers
+@app.on_event("startup")
+async def startup_event():
+    agent.initialize_providers()
 
 if __name__ == "__main__":
     # Run the server
