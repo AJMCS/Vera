@@ -9,6 +9,6 @@ setup(
         "fastapi>=0.109.2",
         "uvicorn>=0.27.1",
         "python-dotenv>=1.0.1",
-        "sentient-agent-framework>=0.1.0",
+        "sentient-agent-framework>=0.3.0",
     ],
 ) 
