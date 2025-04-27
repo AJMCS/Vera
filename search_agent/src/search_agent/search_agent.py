@@ -158,13 +158,8 @@ agent = SearchAgent(name="Vera")
 # Create a server to handle requests to the agent
 server = DefaultServer(agent)
 
-# Get the FastAPI app from the server
-app = server.app
-
-# Add startup event to initialize providers
-@app.on_event("startup")
-async def startup_event():
-    agent.initialize_providers()
+# Initialize providers before starting the server
+agent.initialize_providers()
 
 if __name__ == "__main__":
     # Run the server
