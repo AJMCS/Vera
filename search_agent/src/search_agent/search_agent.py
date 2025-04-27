@@ -152,4 +152,5 @@ if __name__ == "__main__":
     # Create a server to handle requests to the agent
     server = DefaultServer(agent)
     # Run the server
-    server.run()
+    port = int(os.environ.get("PORT", 8080))
+    server.run(port = port)
