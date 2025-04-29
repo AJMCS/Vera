@@ -1,4 +1,5 @@
 import logging
+import aiohttp
 import os
 import re
 from dotenv import load_dotenv
@@ -95,13 +96,21 @@ class SearchAgent(AbstractAgent):
         print(f"Refiend query: {len(refined_query)} | ", refined_query)
         
         while len(refined_query) > 400:
-            refinement_prompt = f'''The length of the query is too long. Create a concise web search query for: {refined_query}. 
-            Response must be less than 400 characters.  
-            If the prompt asks for links, only return a maxiumum of three links.'''  
+            refinement_prompt = f'''The length of the query is too long. shorten the web search query forcefully under 100 characters (including spaces) for: {refined_query}. 
+***Response must be less than 100 characters or less including spaces.***  
+If the prompt asks for links, only return a maxiumum of three links.'''  
             refined_query = await self._model_provider.query(refinement_prompt)
             print(f"Refiend query: {len(refined_query)} | ", refined_query)
             
         search_results = await self._search_provider.search(refined_query)
+
+        valid_results = []
+        for result in search_results["results"]:
+            url = result.get("url")
+            if url and await self.verify_url(url):
+                valid_results.append(result)
+        
+        search_results["results"] = valid_results
 
         if len(search_results["results"]) > 0:
             # Use response handler to emit JSON to the client
@@ -138,7 +147,7 @@ class SearchAgent(AbstractAgent):
 
 # Feed into the LLM for final answer generation
         synthesis_prompt = (
-            f"Using the following content excerpts, answer the user’s question:\n\n"
+            f"Using the following content excerpts, answer the user's question:\n\n"
             f"{search_results}\n\nQuestion: {query.prompt}"
         )
         async for chunk in self._model_provider.query_stream(synthesis_prompt):
@@ -158,6 +167,15 @@ class SearchAgent(AbstractAgent):
         process_search_results_query = f"Summarise the provided search results and use them to answer the provided prompt. Only cite and use search results directly relevant to the user's question(s). Prompt: {prompt}. Search results: {search_results}"
         async for chunk in self._model_provider.query_stream(process_search_results_query):
             yield chunk
+    
+    async def verify_url(self, url: str) -> bool:
+        """Check if the URL is reachable (HTTP 200)."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.head(url, timeout=5) as response:
+                    return response.status == 200
+        except Exception:
+            return False
 
 
 if __name__ == "__main__":
