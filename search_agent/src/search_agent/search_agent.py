@@ -85,8 +85,21 @@ class SearchAgent(AbstractAgent):
         await response_handler.emit_text_block(
             "SEARCH", "Searching internet for results..."
         )
-        refinement_prompt = f"Create a concise web search query for: {query.prompt}, Check snopes if possible. Limit the prompt to 400 characters or less."
+
+        refinement_prompt = f'''Create a concise web search query for: {query.prompt}. 
+        Response must be less than 400 characters.  
+        If the prompt asks for links, only return a maxiumum of three links.
+        Check to make sure the response has more than 200 characters and does not exceed 400 characters before returning a response.'''
+
         refined_query = await self._model_provider.query(refinement_prompt)
+        
+        while len(refined_query) > 400:
+            query.prompt = refined_query
+            refinement_prompt = f'''The length of the query is too long. Create a concise web search query for: {query.prompt}. 
+            Response must be less than 400 characters.  
+            If the prompt asks for links, only return a maxiumum of three links.'''  
+            refined_query = await self._model_provider.query(refinement_prompt)
+            
         search_results = await self._search_provider.search(refined_query)
 
         if len(search_results["results"]) > 0:
