@@ -92,13 +92,14 @@ class SearchAgent(AbstractAgent):
         Check to make sure the response has more than 200 characters and does not exceed 400 characters before returning a response.'''
 
         refined_query = await self._model_provider.query(refinement_prompt)
+        print(f"Refiend query: {len(refined_query)} | ", refined_query)
         
         while len(refined_query) > 400:
-            query.prompt = refined_query
-            refinement_prompt = f'''The length of the query is too long. Create a concise web search query for: {query.prompt}. 
+            refinement_prompt = f'''The length of the query is too long. Create a concise web search query for: {refined_query}. 
             Response must be less than 400 characters.  
             If the prompt asks for links, only return a maxiumum of three links.'''  
             refined_query = await self._model_provider.query(refinement_prompt)
+            print(f"Refiend query: {len(refined_query)} | ", refined_query)
             
         search_results = await self._search_provider.search(refined_query)
 
