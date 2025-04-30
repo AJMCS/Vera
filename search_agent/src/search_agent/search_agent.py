@@ -1,5 +1,6 @@
 import logging
 import aiohttp
+import asyncio
 import os
 import re
 from dotenv import load_dotenv
@@ -104,13 +105,31 @@ If the prompt asks for links, only return a maxiumum of three links.'''
             
         search_results = await self._search_provider.search(refined_query)
 
-        valid_results = []
-        for result in search_results["results"]:
-            url = result.get("url")
-            if url and await self.verify_url(url):
-                valid_results.append(result)
-        
-        search_results["results"] = valid_results
+        print("\n[DEBUG] Raw URLs in search_results['results']:")
+        for res in search_results.get("results", []):
+            print(res.get("url", "(no url found)"))
+
+        # Filter valid URLs in parallel
+        urls_to_check = [res["url"] for res in search_results["results"] if "url" in res]
+
+        print("\n[DEBUG] URLs being passed into _verify_url:")
+        for url in urls_to_check:
+            print(url)
+
+        async with aiohttp.ClientSession() as session:
+            # Run all verifications concurrently
+            verification_results = await asyncio.gather(
+                *[self._verify_url(session, url) for url in urls_to_check]
+            )
+
+        # Create a set of valid URLs for quick filtering
+        valid_urls_set = {url for url, is_valid in verification_results if is_valid}
+
+        # Filter only results with verified URLs
+        search_results["results"] = [
+            res for res in search_results["results"]
+            if res.get("url") in valid_urls_set
+]
 
         if len(search_results["results"]) > 0:
             # Use response handler to emit JSON to the client
@@ -168,14 +187,43 @@ If the prompt asks for links, only return a maxiumum of three links.'''
         async for chunk in self._model_provider.query_stream(process_search_results_query):
             yield chunk
     
-    async def verify_url(self, url: str) -> bool:
-        """Check if the URL is reachable (HTTP 200)."""
+    async def _verify_url(self, session: aiohttp.ClientSession, url: str) -> tuple[str, bool]:
+        """Check if URL is reachable and not a soft 404. Returns (url, is_valid)."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.head(url, timeout=5) as response:
-                    return response.status == 200
-        except Exception:
-            return False
+            # Try HEAD request first
+            async with session.head(url, timeout=5) as response:
+                if response.status >= 400:
+                    print(f"[HEAD FAIL] {url} | Status: {response.status}")
+                    return url, False
+
+            # Try GET to detect soft 404s
+            async with session.get(url, timeout=5) as response:
+                text = await response.text()
+                text_lower = text.lower()
+
+                # Soft 404 signals
+                not_found_signals = [
+                    "404 not found", "error 404", "page not found",
+                    "this page was snatched",
+                    "we couldn’t find the page", "page is missing", 
+                    "404 error", "try another page"
+                ]
+
+                # Extra fallback: loose "404" match with context
+                # if "404" in text_lower and any(w in text_lower for w in ["page", "error", "not found"]):
+                #     print(f"[404] {url}")
+                #     return url, False
+
+                if any(signal in text_lower for signal in not_found_signals):
+                    print(f"[404] {url}")
+                    return url, False
+
+                print(f"[200] {url}")
+                return url, True
+
+        except Exception as e:
+            print(f"[EXCEPTION] {url} | {e}")
+            return url, False
 
 
 if __name__ == "__main__":
